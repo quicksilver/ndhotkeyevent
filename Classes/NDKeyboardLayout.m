@@ -168,6 +168,8 @@ static struct ReverseMappingEntry * _searchReverseMapping( struct ReverseMapping
         else
             return &aMapping[mid];
 	}
+	NSString *entryStr = entry ? [NSString stringWithFormat:@"{%#X, %#X}", entry->character, entry->keyCode] : @"NULL";
+	NSLog(@"unmapped entry: %d (%#x) => %@", aMapping->character, aMapping->character, entryStr);
     return entry;
 }
 
@@ -190,6 +192,8 @@ static struct UnmappedEntry * _unmappedEntryForKeyCode( UInt16 aKeyCode )
         else
             entry = &unmappedKeys[mid];
 	}
+	NSString *entryStr = entry ? [NSString stringWithFormat:@"{%#x, %#x}", entry->character, entry->keyCode] : @"NULL";
+	NSLog(@"unmapped entry: %d (%#x) => %@", aKeyCode, aKeyCode, entryStr);
     return entry;
 }
 
@@ -282,6 +286,7 @@ UInt32 NDCarbonModifierFlagsForCocoaModifierFlags( NSUInteger aModifierFlags )
 
 - (void)generateMappings
 {
+	NSLog(@"%s %@", __FUNCTION__, self);
 	mappings = (struct ReverseMappingEntry*)calloc( 128 + sizeof(unmappedKeys)/sizeof(*unmappedKeys), sizeof(struct ReverseMappingEntry) );
 
 	numberOfMappings = 0;
@@ -335,7 +340,7 @@ UInt32 NDCarbonModifierFlagsForCocoaModifierFlags( NSUInteger aModifierFlags )
 			mappings[i].keypad = YES;
 		}
 	}
-
+#define DEBUGGING_CODE
 #ifdef DEBUGGING_CODE
 	for( NSUInteger i = 1; i < numberOfMappings; i++ )
 	{
@@ -358,6 +363,7 @@ void NDKeyboardLayoutNotificationCallback( CFNotificationCenterRef aCenter, void
 {
     id observerId = (__bridge id)observer;
     if (CFStringCompare(aName, kTISNotifySelectedKeyboardInputSourceChanged, 0) == 0) {
+		NSLog(@"%s: %@", __FUNCTION__, aName);
         NSDictionary		* theUserInfo = @{NDKeyboardLayoutPreviousKeyboardLayoutUserInfoKey: kCurrentKeyboardLayout};
         @synchronized(observerId) { kCurrentKeyboardLayout = nil; }
         [[NSNotificationCenter defaultCenter] postNotificationName:NDKeyboardLayoutSelectedKeyboardInputSourceChangedNotification object:observerId userInfo:theUserInfo];
@@ -503,6 +509,7 @@ void NDKeyboardLayoutNotificationCallback( CFNotificationCenterRef aCenter, void
 			theResult = [NSString stringWithCharacters:theCharacter length:theLength+thePos].uppercaseString;
 		}
 	}
+	NSLog(@"%s %@: %d (%#x) => %@", __FUNCTION__, self, aKeyCode, aKeyCode, theResult);
 	return theResult;
 }
 
@@ -533,6 +540,7 @@ void NDKeyboardLayoutNotificationCallback( CFNotificationCenterRef aCenter, void
 	else
 		theChar  = theEntry->character;
 
+	NSLog(@"%s %@: %d (%#x) => %#x", __FUNCTION__, self, aKeyCode, aKeyCode, theChar);
 	return theChar;
 }
 
@@ -544,6 +552,7 @@ void NDKeyboardLayoutNotificationCallback( CFNotificationCenterRef aCenter, void
 	struct ReverseMappingEntry	* theEntry = NULL;
 	theEntry = _searchReverseMapping( mappings, numberOfMappings, &theSearchValue );
 
+	NSLog(@"%s %@: %d (%#x) => %c", __FUNCTION__, self, aCharacter, aCharacter, (theEntry ? theEntry->keyCode : '\0'));
 	return (theEntry ? theEntry->keyCode : 0);
 }
 
